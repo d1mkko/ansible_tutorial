@@ -1,0 +1,53 @@
+---
+
+ - hosts: all
+   become: true
+   pre_tasks:
+
+   - name: install updates (RedHat)
+     tags: always
+     yum:
+       update_only: yes
+       update_cache: yes
+     when: ansible_distribution == "RedHat"
+
+   - name: install updates (Ubuntu)
+     tags: always
+     apt:
+       upgrade: dist
+       update_cache: yes
+     when: ansible_distribution == "Ubuntu"
+
+ - hosts: web_servers
+   become: true
+   tasks:
+
+
+   - name: install apache and php for Ubuntu servers
+     tags: apache,apache2,ubuntu
+     apt:
+       name:
+         - apache2
+         - libapache2-mod-php
+       state: latest
+     when: ansible_distribution == "Ubuntu"
+
+   - name: install apache and php for RedHat servers
+     tags: apache,httpd,redhat
+     yum:
+       name:
+         - httpd
+         - php
+       state: latest
+     when: ansible_distribution == "RedHat"
+
+ - hosts: db_servers
+   become: true
+   tasks:
+
+   - name: Uninstalling MariaDB package
+     tags: redhat,db,maria
+     package:
+          name: mariadb-server
+          state: absent
+
