@@ -18,6 +18,27 @@
        update_cache: yes
      when: ansible_distribution == "Ubuntu"
 
+   - name: add user simone
+     tags: always
+     user:
+       name: simone
+       groups: root
+
+   - name: add ssh key for simone
+     tags: always
+     authorized_key:
+        user: simone
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILvICaaCcJusFw93Gnu62H+/eALX89HpV9lqrrtjjWcV ansible"
+
+   - name: add sudoers file for simone
+     tags: always
+     copy:
+       src: sudoer_simone
+       dest: /etc/sudoers.d/simone
+       owner: root
+       group: root
+       mode: 0440
+
  - hosts:  workstations
    become: true
    tasks:
@@ -59,6 +80,22 @@
        state: latest
      when: ansible_distribution == "RedHat"
 
+   - name: change e-mail address or admin
+     tags: apache, httpd, redhat
+     lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin' 
+        line: ServerAdmin somebody@something.com
+     when: ansible_distribution == "RedHat"
+     register: httpd
+
+   - name: restart redhat
+     tags: apache, httpd, redhat
+     service:  
+       name: httpd
+       state: restarted
+     when: httpd.changed
+
    - name: copy default html file for site
      tags: apache, apache2, httpd
      copy:
@@ -68,13 +105,38 @@
        group: root
        mode: 0644
 
+   - name: start httpd (Ubuntu)
+     tags: apache, ubuntu, httpd
+     service:    
+          name: apache2
+          state: started
+     when: ansible_distribution == "Ubuntu" 
+
  - hosts: db_servers
    become: true
    tasks:
 
-   - name: Uninstalling MariaDB package
-     tags: redhat,db,maria
-     package:
-          name: mariadb-server
-          state: absent
 
+   - name: start httpd (RedHat)
+     tags: httpd, redhat,
+     service:
+          name: httpd
+          state: started
+          enabled: yes
+     when: ansible_distribution == "RedHat"
+
+   - name: change e-mail address or admin
+     tags: apache, httpd, redhat
+     lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin'
+        line: ServerAdmin somebody@something.com
+     when: ansible_distribution == "RedHat"
+     register: httpd
+
+   - name: restart redhat
+     tags: apache, httpd, redhat
+     service:
+       name: httpd
+       state: restarted
+     when: httpd.changed
