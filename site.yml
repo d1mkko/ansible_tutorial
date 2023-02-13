@@ -4,25 +4,19 @@
    become: true
    pre_tasks:
 
-   - name: install updates (RedHat)
+   - name: update repo cache (RedHat)
      tags: always
      yum:
-       update_only: yes
        update_cache: yes
+     changed_when: false
      when: ansible_distribution == "RedHat"
 
-   - name: install updates (Ubuntu)
+   - name: update repo cache (Ubuntu)
      tags: always
      apt:
-       upgrade: dist
        update_cache: yes
+     changed_when: false
      when: ansible_distribution == "Ubuntu"
-
-   - name: add user simone
-     tags: always
-     user:
-       name: simone
-       groups: root
 
    - name: add ssh key for simone
      tags: always
@@ -30,14 +24,6 @@
         user: simone
         key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILvICaaCcJusFw93Gnu62H+/eALX89HpV9lqrrtjjWcV ansible"
 
-   - name: add sudoers file for simone
-     tags: always
-     copy:
-       src: sudoer_simone
-       dest: /etc/sudoers.d/simone
-       owner: root
-       group: root
-       mode: 0440
 
  - hosts:  workstations
    become: true
